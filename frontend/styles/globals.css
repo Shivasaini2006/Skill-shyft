@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  @apply box-border;
+}
+
+body {
+  @apply bg-dark-bg text-white font-sans;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-dark-bg;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-accent-primary rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-accent-secondary;
+}
+
+/* Global animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* Glass effect */
+.glass {
+  @apply backdrop-blur-md bg-dark-card/50 border border-dark-border;
+}
+
+/* Button styles */
+.btn {
+  @apply px-6 py-2 rounded-lg font-semibold transition-all duration-300;
+}
+
+.btn-primary {
+  @apply btn bg-accent-primary text-black hover:shadow-glow;
+}
+
+.btn-secondary {
+  @apply btn bg-accent-secondary text-white hover:shadow-glow-secondary;
+}
+
+.btn-outline {
+  @apply btn border-2 border-accent-primary text-accent-primary hover:bg-accent-primary/10;
+}
