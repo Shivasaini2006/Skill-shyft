@@ -17,13 +17,14 @@ export default function ForumPage() {
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
         const [postsRes, catsRes] = await Promise.all([
-          apiClient.get('/posts'),
+          apiClient.get('/posts', { params: { category: selectedCategory } }),
           apiClient.get('/categories'),
         ]);
-        setPosts(postsRes.data.posts);
-        setCategories(catsRes.data);
+        setPosts(postsRes.data.posts || []);
+        setCategories(catsRes.data || []);
       } catch (error) {
         console.error('Failed to fetch data:', error);
       } finally {

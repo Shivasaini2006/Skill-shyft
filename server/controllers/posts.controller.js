@@ -89,7 +89,7 @@ exports.getPosts = async (req, res) => {
       posts: posts.map(p => ({
         id: p.id,
         title: p.title,
-        content: p.content.substring(0, 200) + '...',
+        content: p.content ? (p.content.length > 200 ? p.content.substring(0, 200) + '...' : p.content) : '',
         views: p.views,
         likes: p.likes,
         comments: p.comments,

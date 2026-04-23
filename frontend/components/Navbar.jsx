@@ -38,9 +38,6 @@ export default function Navbar() {
             <Link href="/events" className="text-sm font-bold uppercase tracking-wider hover:text-gray-300 transition-colors">
               Events
             </Link>
-            <Link href="/community" className="text-sm font-bold uppercase tracking-wider hover:text-gray-300 transition-colors">
-              Community
-            </Link>
           </div>
 
           {/* Right Section */}
@@ -95,9 +92,6 @@ export default function Navbar() {
             </Link>
             <Link href="/events" className="block py-3 text-sm font-bold uppercase tracking-wider hover:text-gray-300 transition-colors">
               Events
-            </Link>
-            <Link href="/community" className="block py-3 text-sm font-bold uppercase tracking-wider hover:text-gray-300 transition-colors">
-              Community
             </Link>
             {isAuthenticated ? (
               <>

@@ -14,13 +14,14 @@ export default function ResourcesPage() {
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
         const [resRes, catsRes] = await Promise.all([
-          apiClient.get('/resources'),
+          apiClient.get('/resources', { params: { category: selectedCategory } }),
           apiClient.get('/categories'),
         ]);
-        setResources(resRes.data.resources);
-        setCategories(catsRes.data);
+        setResources(resRes.data.resources || []);
+        setCategories(catsRes.data || []);
       } catch (error) {
         console.error('Failed to fetch data:', error);
       } finally {

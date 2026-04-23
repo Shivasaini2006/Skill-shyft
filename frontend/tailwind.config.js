@@ -22,6 +22,9 @@ module.exports = {
           200: '#E5E5E5', // Very light gray for highlights
           100: '#F5F5F5', // Off-white for special cases
         },
+        'dark-bg': '#000000',
+        'dark-card': '#1A1A1A',
+        'dark-border': '#333333',
         // Remove bright accent colors - focus on grayscale
         accent: {
           primary: '#FFFFFF', // White for primary actions

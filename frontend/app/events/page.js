@@ -16,11 +16,12 @@ export default function EventsPage() {
 
   useEffect(() => {
     const fetchEvents = async () => {
+      setLoading(true);
       try {
         const res = await apiClient.get('/events', {
           params: { type: selectedType },
         });
-        setEvents(res.data.events);
+        setEvents(res.data.events || []);
       } catch (error) {
         console.error('Failed to fetch events:', error);
       } finally {
