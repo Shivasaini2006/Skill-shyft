@@ -2,37 +2,102 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Base styles for black & white theme */
 * {
   @apply box-border;
 }
 
-body {
-  @apply bg-dark-bg text-white font-sans;
+html {
+  @apply scroll-smooth;
 }
 
-/* Custom scrollbar */
+body {
+  @apply bg-black text-white font-sans antialiased;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+}
+
+/* Typography hierarchy */
+h1, h2, h3, h4, h5, h6 {
+  @apply font-black tracking-tight;
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
+}
+
+h1 { @apply text-6xl md:text-8xl; }
+h2 { @apply text-4xl md:text-6xl; }
+h3 { @apply text-2xl md:text-4xl; }
+h4 { @apply text-xl md:text-2xl; }
+h5 { @apply text-lg md:text-xl; }
+h6 { @apply text-base md:text-lg; }
+
+/* Custom scrollbar - minimal and strong */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-dark-bg;
+  @apply bg-black;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-accent-primary rounded-full;
+  @apply bg-gray-600 rounded-none;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-accent-secondary;
+  @apply bg-gray-500;
 }
 
-/* Global animations */
+/* Focus states - high contrast */
+.focus-ring:focus {
+  @apply outline-none ring-2 ring-white ring-offset-2 ring-offset-black;
+}
+
+/* Button styles - minimal and bold */
+.btn-primary {
+  @apply bg-white text-black font-black uppercase tracking-wide px-8 py-4 text-sm border-2 border-white;
+  @apply hover:bg-black hover:text-white transition-all duration-300;
+  letter-spacing: 0.05em;
+}
+
+.btn-outline {
+  @apply bg-transparent text-white font-bold uppercase tracking-wide px-8 py-4 text-sm border-2 border-white;
+  @apply hover:bg-white hover:text-black transition-all duration-300;
+  letter-spacing: 0.05em;
+}
+
+.btn-secondary {
+  @apply bg-gray-900 text-white font-bold uppercase tracking-wide px-6 py-3 text-xs border border-gray-700;
+  @apply hover:bg-gray-800 hover:border-gray-600 transition-all duration-300;
+}
+
+/* Card styles - layered grayscale */
+.card {
+  @apply bg-gray-900 border border-gray-700 rounded-none;
+}
+
+.card-hover {
+  @apply hover:bg-gray-800 hover:border-gray-600 transition-all duration-300;
+}
+
+/* Input styles - minimal */
+.input-primary {
+  @apply bg-gray-900 border-2 border-gray-700 text-white placeholder-gray-500;
+  @apply focus:border-white focus:outline-none transition-all duration-300;
+}
+
+/* Link styles */
+.link-primary {
+  @apply text-white font-bold uppercase tracking-wide;
+  @apply hover:text-gray-300 transition-colors duration-300;
+  letter-spacing: 0.025em;
+}
+
+/* Animations - clean and strong */
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(1rem);
   }
   to {
     opacity: 1;
@@ -40,13 +105,59 @@ body {
   }
 }
 
-.animate-fadeIn {
-  animation: fadeIn 0.5s ease-out;
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(2rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-/* Glass effect */
-.glass {
-  @apply backdrop-blur-md bg-dark-card/50 border border-dark-border;
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.8s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.6s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.5s ease-out;
+}
+
+/* Utility classes */
+.text-shadow-strong {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.border-sharp {
+  border-radius: 0;
+}
+
+/* Selection */
+::selection {
+  @apply bg-white text-black;
+}
+
+/* Performance optimizations */
+.gpu-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
 }
 
 /* Button styles */
@@ -55,11 +166,11 @@ body {
 }
 
 .btn-primary {
-  @apply btn bg-accent-primary text-black hover:shadow-glow;
+  @apply btn bg-accent-primary text-black hover:shadow-strong;
 }
 
 .btn-secondary {
-  @apply btn bg-accent-secondary text-white hover:shadow-glow-secondary;
+  @apply btn bg-accent-secondary text-white hover:shadow-strong;
 }
 
 .btn-outline {

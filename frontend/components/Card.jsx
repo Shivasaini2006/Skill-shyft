@@ -6,9 +6,9 @@ export default function Card({ children, className = '', hover = true }) {
   return (
     <div
       className={`
-        bg-dark-card border border-dark-border rounded-lg p-6
-        transition-all duration-300
-        ${hover ? 'hover:border-accent-primary hover:shadow-glow' : ''}
+        bg-gray-900 border-2 border-gray-700 p-8 border-sharp
+        transition-all duration-300 gpu-accelerated
+        ${hover ? 'hover:bg-gray-800 hover:border-gray-600 hover:shadow-strong' : ''}
         ${className}
       `}
     >

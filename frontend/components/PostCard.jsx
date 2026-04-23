@@ -7,61 +7,61 @@ import Card from './Card.jsx';
 
 export default function PostCard({ post }) {
   return (
-    <Card>
-      <div className="space-y-4">
+    <div className="bg-gray-900 border-2 border-gray-700 p-8 border-sharp hover:bg-gray-800 hover:border-gray-600 transition-all duration-300 gpu-accelerated">
+      <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-start justify-between">
+        <div className="space-y-4">
           <div>
             <Link href={`/post/${post.id}`}>
-              <h3 className="text-lg font-bold hover:text-accent-primary transition line-clamp-2">
+              <h3 className="text-xl font-black hover:text-gray-300 transition-colors uppercase tracking-tight line-clamp-2">
                 {post.title}
               </h3>
             </Link>
-            <div className="flex items-center gap-4 mt-2 text-sm text-gray-400">
-              <span className="px-2 py-1 bg-accent-primary/20 text-accent-primary rounded">
+            <div className="flex items-center gap-4 mt-4">
+              <span className="px-4 py-2 bg-gray-800 text-white text-xs font-bold uppercase tracking-wider border border-gray-600">
                 {post.category}
               </span>
-              <span className="text-xs text-gray-500">
-                {new Date(post.createdAt).toLocaleDateString()}
+              <span className="text-sm text-gray-500 font-medium uppercase tracking-wide">
+                {new Date(post.createdAt).toLocaleDateString('en-US')}
               </span>
             </div>
           </div>
         </div>
 
         {/* Content Preview */}
-        <p className="text-gray-300 line-clamp-3 text-sm">
+        <p className="text-gray-400 line-clamp-3 text-base leading-relaxed">
           {post.content}
         </p>
 
         {/* Author Info */}
-        <div className="flex items-center gap-3 py-3 border-t border-dark-border">
-          <div className="w-8 h-8 bg-accent-primary/20 rounded-full"></div>
+        <div className="flex items-center gap-4 py-6 border-t-2 border-gray-700">
+          <div className="w-10 h-10 bg-gray-700 border-2 border-gray-600"></div>
           <div className="flex-1">
-            <p className="text-sm font-semibold">{post.author.name}</p>
+            <p className="text-base font-bold text-white uppercase tracking-wide">{post.author.name}</p>
           </div>
         </div>
 
         {/* Stats & Actions */}
-        <div className="flex items-center justify-between pt-3 border-t border-dark-border text-gray-400 text-sm">
-          <div className="flex gap-4">
-            <div className="flex items-center gap-1 hover:text-accent-primary transition cursor-pointer">
-              <FiEye size={16} />
-              <span>{post.views}</span>
+        <div className="flex items-center justify-between pt-6 border-t-2 border-gray-700 text-gray-500">
+          <div className="flex gap-6">
+            <div className="flex items-center gap-2 hover:text-white transition-colors cursor-pointer">
+              <FiEye size={18} />
+              <span className="font-bold">{post.views}</span>
             </div>
-            <div className="flex items-center gap-1 hover:text-accent-primary transition cursor-pointer">
-              <FiHeart size={16} />
-              <span>{post.likes}</span>
+            <div className="flex items-center gap-2 hover:text-white transition-colors cursor-pointer">
+              <FiHeart size={18} />
+              <span className="font-bold">{post.likes}</span>
             </div>
-            <div className="flex items-center gap-1 hover:text-accent-primary transition cursor-pointer">
-              <FiMessageCircle size={16} />
-              <span>{post.comments}</span>
+            <div className="flex items-center gap-2 hover:text-white transition-colors cursor-pointer">
+              <FiMessageCircle size={18} />
+              <span className="font-bold">{post.comments}</span>
             </div>
           </div>
-          <button className="hover:text-accent-primary transition">
-            <FiShare2 size={16} />
+          <button className="hover:text-white transition-colors">
+            <FiShare2 size={18} />
           </button>
         </div>
       </div>
-    </Card>
+    </div>
   );
 }
