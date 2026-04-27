@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import useAuthStore from '../lib/authStore';
 import { FiMenu, FiX, FiSearch, FiBell } from 'react-icons/fi';
@@ -10,6 +11,11 @@ export default function Navbar() {
   const router = useRouter();
   const { isAuthenticated, logout, user } = useAuthStore();
   const [isOpen, setIsOpen] = React.useState(false);
+  const [isMounted, setIsMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -22,9 +28,14 @@ export default function Navbar() {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="text-2xl font-black text-white group-hover:text-gray-300 transition-colors uppercase tracking-wide">
-              SKILL SHIFT
-            </div>
+            <Image 
+              src="/SS.png" 
+              alt="Skill Shift Logo" 
+              width={160} 
+              height={50} 
+              className="object-contain"
+              priority 
+            />
           </Link>
 
           {/* Desktop Menu */}
@@ -48,7 +59,16 @@ export default function Navbar() {
             <button className="p-3 hover:bg-gray-800 border-2 border-gray-700 hover:border-gray-600 transition-all duration-300 border-sharp">
               <FiBell size={20} className="text-white" />
             </button>
-            {isAuthenticated ? (
+            {!isMounted || !isAuthenticated ? (
+              <div className="flex gap-3">
+                <Link href="/login" className="btn-outline text-sm">
+                  Login
+                </Link>
+                <Link href="/signup" className="btn-primary text-sm">
+                  Join
+                </Link>
+              </div>
+            ) : (
               <div className="flex items-center gap-4">
                 <Link href="/profile" className="text-sm font-bold hover:text-gray-300 transition-colors uppercase tracking-wide">
                   {user?.name}
@@ -59,15 +79,6 @@ export default function Navbar() {
                 >
                   Logout
                 </button>
-              </div>
-            ) : (
-              <div className="flex gap-3">
-                <Link href="/login" className="btn-outline text-sm">
-                  Login
-                </Link>
-                <Link href="/signup" className="btn-primary text-sm">
-                  Join
-                </Link>
               </div>
             )}
           </div>
@@ -93,7 +104,16 @@ export default function Navbar() {
             <Link href="/events" className="block py-3 text-sm font-bold uppercase tracking-wider hover:text-gray-300 transition-colors">
               Events
             </Link>
-            {isAuthenticated ? (
+            {!isMounted || !isAuthenticated ? (
+              <div className="flex gap-3 mt-4">
+                <Link href="/login" className="btn-outline flex-1 text-sm">
+                  Login
+                </Link>
+                <Link href="/signup" className="btn-primary flex-1 text-sm">
+                  Join
+                </Link>
+              </div>
+            ) : (
               <>
                 <Link href="/profile" className="block py-3 text-sm font-bold uppercase tracking-wider hover:text-gray-300 transition-colors">
                   {user?.name}
@@ -105,15 +125,6 @@ export default function Navbar() {
                   Logout
                 </button>
               </>
-            ) : (
-              <div className="flex gap-3 mt-4">
-                <Link href="/login" className="btn-outline flex-1 text-sm">
-                  Login
-                </Link>
-                <Link href="/signup" className="btn-primary flex-1 text-sm">
-                  Join
-                </Link>
-              </div>
             )}
           </div>
         )}

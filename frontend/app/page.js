@@ -1,4 +1,5 @@
 'use client';
+import { useState, useEffect } from 'react';
 
 import Link from 'next/link';
 import { FiArrowRight, FiGitBranch, FiTrendingUp, FiUsers, FiCode } from 'react-icons/fi';
@@ -9,6 +10,11 @@ import useAuthStore from '../lib/authStore';
 
 export default function Home() {
   const { isAuthenticated } = useAuthStore();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Mock data
   const trendingPosts = [
@@ -89,7 +95,17 @@ export default function Home() {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-6 justify-center pt-12">
-            {isAuthenticated ? (
+            {!isMounted || !isAuthenticated ? (
+              <>
+                <Link href="/signup" className="btn-primary text-lg px-12 py-5 group inline-flex items-center gap-3">
+                  Join SKILL SHIFT
+                  <FiArrowRight className="group-hover:translate-x-2 transition-transform duration-300" size={20} />
+                </Link>
+                <Link href="/login" className="btn-outline text-lg px-12 py-5">
+                  Sign In
+                </Link>
+              </>
+            ) : (
               <>
                 <Link href="/forum" className="btn-primary text-lg px-12 py-5 group inline-flex items-center gap-3">
                   Explore Forum
@@ -98,16 +114,6 @@ export default function Home() {
                 <Link href="/events" className="btn-outline text-lg px-12 py-5 group inline-flex items-center gap-3">
                   View Events
                   <FiArrowRight className="group-hover:translate-x-2 transition-transform duration-300" size={20} />
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link href="/signup" className="btn-primary text-lg px-12 py-5 group inline-flex items-center gap-3">
-                  Join SKILL SHIFT
-                  <FiArrowRight className="group-hover:translate-x-2 transition-transform duration-300" size={20} />
-                </Link>
-                <Link href="/login" className="btn-outline text-lg px-12 py-5">
-                  Sign In
                 </Link>
               </>
             )}
@@ -188,11 +194,11 @@ export default function Home() {
               <p className="text-lg text-gray-400 font-medium max-w-2xl mx-auto">
                 Join thousands of developers and innovators building the future together.
               </p>
-              {!isAuthenticated && (
+              {!isMounted || !isAuthenticated ? (
                 <Link href="/signup" className="btn-primary inline-block text-lg px-12 py-5 mt-8">
                   Get Started Now
                 </Link>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
