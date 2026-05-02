@@ -6,9 +6,9 @@ export default function Card({ children, className = '', hover = true }) {
   return (
     <div
       className={`
-        bg-gray-900 border-2 border-gray-700 p-8 border-sharp
-        transition-all duration-300 gpu-accelerated
-        ${hover ? 'hover:bg-gray-800 hover:border-gray-600 hover:shadow-strong' : ''}
+        rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-2xl
+        transition duration-300 will-change-transform
+        ${hover ? 'hover:-translate-y-0.5 hover:border-white/15 hover:bg-white/[0.07]' : ''}
         ${className}
       `}
     >

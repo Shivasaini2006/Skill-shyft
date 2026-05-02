@@ -6,7 +6,7 @@ import PostCard from '../../components/PostCard';
 import useAuthStore from '../../lib/authStore';
 import apiClient from '../../lib/apiClient';
 import Link from 'next/link';
-import { FiPlus, FiFilter } from 'react-icons/fi';
+import { Filter, Plus } from 'lucide-react';
 
 export default function ForumPage() {
   const { isAuthenticated } = useAuthStore();
@@ -20,7 +20,7 @@ export default function ForumPage() {
       setLoading(true);
       try {
         const [postsRes, catsRes] = await Promise.all([
-          apiClient.get('/posts', { params: { category: selectedCategory } }),
+          apiClient.get('/posts', { params: { categoryId: selectedCategory } }),
           apiClient.get('/categories'),
         ]);
         setPosts(postsRes.data.posts || []);
@@ -37,26 +37,29 @@ export default function ForumPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-accent-primary text-lg">Loading...</div>
+      <div className="min-h-screen bg-black pt-28 flex items-center justify-center">
+        <div className="animate-pulse text-gray-300 text-lg">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="bg-dark-bg min-h-screen py-12">
-      <div className="max-w-7xl mx-auto px-4">
+    <div className="min-h-screen bg-black pt-28 pb-20">
+      <div className="max-w-7xl mx-auto px-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-12">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between mb-12">
           <div>
-            <h1 className="text-4xl font-black uppercase mb-2">
-              <span className="text-accent-primary">Community</span> Forum
+            <h1 className="text-4xl sm:text-5xl font-black tracking-[-0.05em] text-white mb-3">
+              <span className="text-gradient">Community</span> Forum
             </h1>
             <p className="text-gray-400">Discussions, questions, and knowledge sharing</p>
           </div>
           {isAuthenticated && (
-            <Link href="/forum/create" className="btn-primary flex items-center gap-2">
-              <FiPlus size={20} />
+            <Link
+              href="/forum/create"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black shadow-2xl transition-transform hover:-translate-y-0.5"
+            >
+              <Plus size={20} />
               New Post
             </Link>
           )}
@@ -67,16 +70,16 @@ export default function ForumPage() {
           <div className="md:col-span-1">
             <Card>
               <div className="space-y-3">
-                <h3 className="font-bold uppercase text-sm flex items-center gap-2">
-                  <FiFilter size={16} />
+                <h3 className="text-xs font-semibold uppercase tracking-[0.22em] text-gray-400 flex items-center gap-2">
+                  <Filter size={16} />
                   Categories
                 </h3>
                 <button
                   onClick={() => setSelectedCategory(null)}
                   className={`w-full text-left px-3 py-2 rounded transition ${
                     selectedCategory === null
-                      ? 'bg-accent-primary/20 text-accent-primary'
-                      : 'hover:bg-dark-bg'
+                      ? 'bg-white/10 text-white'
+                      : 'hover:bg-white/5 text-gray-300'
                   }`}
                 >
                   All
@@ -87,11 +90,11 @@ export default function ForumPage() {
                     onClick={() => setSelectedCategory(cat.id)}
                     className={`w-full text-left px-3 py-2 rounded transition text-sm ${
                       selectedCategory === cat.id
-                        ? 'bg-accent-primary/20 text-accent-primary'
-                        : 'hover:bg-dark-bg'
+                        ? 'bg-white/10 text-white'
+                        : 'hover:bg-white/5 text-gray-300'
                     }`}
                   >
-                    <span className="mr-2">{cat.icon}</span>
+                    <span className="mr-2 opacity-80">{cat.icon}</span>
                     {cat.name}
                   </button>
                 ))}

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Card from '../../components/Card';
 import ResourceCard from '../../components/ResourceCard';
 import apiClient from '../../lib/apiClient';
-import { FiFilter } from 'react-icons/fi';
+import { Filter } from 'lucide-react';
 
 export default function ResourcesPage() {
   const [resources, setResources] = useState([]);
@@ -17,7 +17,7 @@ export default function ResourcesPage() {
       setLoading(true);
       try {
         const [resRes, catsRes] = await Promise.all([
-          apiClient.get('/resources', { params: { category: selectedCategory } }),
+          apiClient.get('/resources', { params: { categoryId: selectedCategory } }),
           apiClient.get('/categories'),
         ]);
         setResources(resRes.data.resources || []);
@@ -34,19 +34,19 @@ export default function ResourcesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-accent-primary text-lg">Loading...</div>
+      <div className="min-h-screen bg-black pt-28 flex items-center justify-center">
+        <div className="animate-pulse text-gray-300 text-lg">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="bg-dark-bg min-h-screen py-12">
-      <div className="max-w-7xl mx-auto px-4">
+    <div className="min-h-screen bg-black pt-28 pb-20">
+      <div className="max-w-7xl mx-auto px-6">
         {/* Header */}
         <div className="mb-12">
-          <h1 className="text-4xl font-black uppercase mb-2">
-            Learning <span className="text-accent-secondary">Resources</span>
+          <h1 className="text-4xl sm:text-5xl font-black tracking-[-0.05em] text-white mb-3">
+            Learning <span className="text-gradient">Resources</span>
           </h1>
           <p className="text-gray-400">Articles, tutorials, and curated learning materials</p>
         </div>
@@ -56,16 +56,16 @@ export default function ResourcesPage() {
           <div className="md:col-span-1">
             <Card>
               <div className="space-y-3">
-                <h3 className="font-bold uppercase text-sm flex items-center gap-2">
-                  <FiFilter size={16} />
+                <h3 className="text-xs font-semibold uppercase tracking-[0.22em] text-gray-400 flex items-center gap-2">
+                  <Filter size={16} />
                   Categories
                 </h3>
                 <button
                   onClick={() => setSelectedCategory(null)}
                   className={`w-full text-left px-3 py-2 rounded transition ${
                     selectedCategory === null
-                      ? 'bg-accent-secondary/20 text-accent-secondary'
-                      : 'hover:bg-dark-bg'
+                      ? 'bg-white/10 text-white'
+                      : 'hover:bg-white/5 text-gray-300'
                   }`}
                 >
                   All Resources
@@ -76,11 +76,11 @@ export default function ResourcesPage() {
                     onClick={() => setSelectedCategory(cat.id)}
                     className={`w-full text-left px-3 py-2 rounded transition text-sm ${
                       selectedCategory === cat.id
-                        ? 'bg-accent-secondary/20 text-accent-secondary'
-                        : 'hover:bg-dark-bg'
+                        ? 'bg-white/10 text-white'
+                        : 'hover:bg-white/5 text-gray-300'
                     }`}
                   >
-                    <span className="mr-2">{cat.icon}</span>
+                    <span className="mr-2 opacity-80">{cat.icon}</span>
                     {cat.name}
                   </button>
                 ))}

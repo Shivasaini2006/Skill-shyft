@@ -6,7 +6,7 @@ import EventCard from '../../components/EventCard';
 import useAuthStore from '../../lib/authStore';
 import apiClient from '../../lib/apiClient';
 import Link from 'next/link';
-import { FiPlus, FiFilter } from 'react-icons/fi';
+import { Filter, Plus } from 'lucide-react';
 
 export default function EventsPage() {
   const { isAuthenticated } = useAuthStore();
@@ -36,26 +36,29 @@ export default function EventsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-accent-primary text-lg">Loading...</div>
+      <div className="min-h-screen bg-black pt-28 flex items-center justify-center">
+        <div className="animate-pulse text-gray-300 text-lg">Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="bg-dark-bg min-h-screen py-12">
-      <div className="max-w-7xl mx-auto px-4">
+    <div className="min-h-screen bg-black pt-28 pb-20">
+      <div className="max-w-7xl mx-auto px-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-12">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between mb-12">
           <div>
-            <h1 className="text-4xl font-black uppercase mb-2">
-              <span className="text-accent-secondary">Hackathons</span> & Events
+            <h1 className="text-4xl sm:text-5xl font-black tracking-[-0.05em] text-white mb-3">
+              <span className="text-gradient">Hackathons</span> & Events
             </h1>
             <p className="text-gray-400">Challenges, competitions, and learning events</p>
           </div>
           {isAuthenticated && (
-            <Link href="/events/create" className="btn-secondary flex items-center gap-2">
-              <FiPlus size={20} />
+            <Link
+              href="/events/create"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black shadow-2xl transition-transform hover:-translate-y-0.5"
+            >
+              <Plus size={20} />
               Create Event
             </Link>
           )}
@@ -66,16 +69,16 @@ export default function EventsPage() {
           <div className="md:col-span-1">
             <Card>
               <div className="space-y-3">
-                <h3 className="font-bold uppercase text-sm flex items-center gap-2">
-                  <FiFilter size={16} />
+                <h3 className="text-xs font-semibold uppercase tracking-[0.22em] text-gray-400 flex items-center gap-2">
+                  <Filter size={16} />
                   Event Type
                 </h3>
                 <button
                   onClick={() => setSelectedType(null)}
                   className={`w-full text-left px-3 py-2 rounded transition ${
                     selectedType === null
-                      ? 'bg-accent-secondary/20 text-accent-secondary'
-                      : 'hover:bg-dark-bg'
+                      ? 'bg-white/10 text-white'
+                      : 'hover:bg-white/5 text-gray-300'
                   }`}
                 >
                   All Events
@@ -86,8 +89,8 @@ export default function EventsPage() {
                     onClick={() => setSelectedType(type)}
                     className={`w-full text-left px-3 py-2 rounded transition text-sm capitalize ${
                       selectedType === type
-                        ? 'bg-accent-secondary/20 text-accent-secondary'
-                        : 'hover:bg-dark-bg'
+                        ? 'bg-white/10 text-white'
+                        : 'hover:bg-white/5 text-gray-300'
                     }`}
                   >
                     {type}

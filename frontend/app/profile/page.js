@@ -5,7 +5,7 @@ import Card from '../../components/Card';
 import useAuthStore from '../../lib/authStore';
 import apiClient from '../../lib/apiClient';
 import Link from 'next/link';
-import { FiEdit2, FiLogOut } from 'react-icons/fi';
+import { Edit3, LogOut } from 'lucide-react';
 
 export default function ProfilePage() {
   const { user, logout } = useAuthStore();
@@ -31,15 +31,15 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-accent-primary text-lg">Loading...</div>
+      <div className="min-h-screen bg-black pt-28 flex items-center justify-center">
+        <div className="animate-pulse text-gray-300 text-lg">Loading...</div>
       </div>
     );
   }
 
   if (!profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-black pt-28 flex items-center justify-center">
         <Card>
           <p className="text-gray-400">Profile not found.</p>
         </Card>
@@ -48,30 +48,41 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="bg-dark-bg min-h-screen py-12">
-      <div className="max-w-4xl mx-auto px-4">
+    <div className="min-h-screen bg-black pt-28 pb-20">
+      <div className="max-w-4xl mx-auto px-6">
         {/* Profile Header */}
         <Card className="mb-8">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div className="flex items-start gap-6">
-              <div className="w-24 h-24 bg-gradient-to-br from-accent-primary to-accent-secondary rounded-lg"></div>
+              {profile.avatarUrl ? (
+                <img
+                  src={profile.avatarUrl}
+                  alt={profile.name}
+                  className="h-24 w-24 rounded-3xl border border-white/10 object-cover"
+                  loading="lazy"
+                />
+              ) : (
+                <div className="flex h-24 w-24 items-center justify-center rounded-3xl border border-white/10 bg-white/5 text-3xl font-semibold text-white">
+                  {(profile.name || 'U').slice(0, 1).toUpperCase()}
+                </div>
+              )}
               <div>
-                <h1 className="text-3xl font-black mb-2">{profile.name}</h1>
+                <h1 className="text-3xl font-black tracking-[-0.04em] text-white mb-2">{profile.name}</h1>
                 <p className="text-gray-400 mb-4">{profile.email}</p>
                 {profile.bio && (
                   <p className="text-sm text-gray-300">{profile.bio}</p>
                 )}
                 <div className="flex gap-6 mt-4 text-sm">
                   <div>
-                    <p className="font-bold text-accent-primary">{profile.posts}</p>
+                    <p className="font-bold text-white">{profile.posts}</p>
                     <p className="text-gray-400">Posts</p>
                   </div>
                   <div>
-                    <p className="font-bold text-accent-primary">{profile.followers}</p>
+                    <p className="font-bold text-white">{profile.followers}</p>
                     <p className="text-gray-400">Followers</p>
                   </div>
                   <div>
-                    <p className="font-bold text-accent-primary">{profile.following}</p>
+                    <p className="font-bold text-white">{profile.following}</p>
                     <p className="text-gray-400">Following</p>
                   </div>
                 </div>
@@ -79,8 +90,11 @@ export default function ProfilePage() {
             </div>
 
             <div className="flex flex-col gap-2">
-              <Link href="/profile/edit" className="btn-primary flex items-center gap-2 text-sm">
-                <FiEdit2 size={16} />
+              <Link
+                href="/profile/edit"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black shadow-2xl transition-transform hover:-translate-y-0.5"
+              >
+                <Edit3 size={16} />
                 Edit Profile
               </Link>
               <button
@@ -88,9 +102,9 @@ export default function ProfilePage() {
                   logout();
                   window.location.href = '/';
                 }}
-                className="btn-outline flex items-center gap-2 text-sm"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-white/15 bg-transparent px-6 py-3 text-sm font-semibold text-white/90 transition-colors hover:bg-white/5"
               >
-                <FiLogOut size={16} />
+                <LogOut size={16} />
                 Logout
               </button>
             </div>
@@ -103,7 +117,7 @@ export default function ProfilePage() {
             <h2 className="text-xl font-bold mb-4">Skills</h2>
             <div className="flex flex-wrap gap-2">
               {profile.skills.map((skill, idx) => (
-                <span key={idx} className="px-4 py-2 bg-accent-primary/20 text-accent-primary rounded-full text-sm font-semibold">
+                <span key={idx} className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-gray-200">
                   {skill}
                 </span>
               ))}
@@ -115,7 +129,7 @@ export default function ProfilePage() {
         <Card>
           <div className="text-center">
             <p className="text-gray-400">Member since</p>
-            <p className="text-2xl font-bold text-accent-primary">
+            <p className="text-2xl font-bold text-white">
               {new Date(profile.createdAt).toLocaleDateString()}
             </p>
           </div>
