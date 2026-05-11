@@ -31,8 +31,14 @@ export default function LoginPage() {
 
     try {
       const response = await apiClient.post('/auth/login', formData);
-      login(response.data.user, response.data.token);
-      router.push('/forum');
+      const user = response.data.user;
+      login(user, response.data.token);
+      
+      if (user.role === 'admin' || user.role === 'super_admin') {
+        router.push('/admin');
+      } else {
+        router.push('/profile');
+      }
     } catch (err) {
       setError(err.response?.data?.error || 'Login failed. Please try again.');
     } finally {

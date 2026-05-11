@@ -66,7 +66,7 @@ exports.login = async (req, res) => {
     const connection = await pool.getConnection();
 
     const [users] = await connection.execute(
-      'SELECT id, name, email, password FROM users WHERE email = ?',
+      'SELECT id, name, email, password, role FROM users WHERE email = ?',
       [email]
     );
 
@@ -84,7 +84,7 @@ exports.login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, name: user.name },
+      { id: user.id, email: user.email, name: user.name, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRE || '7d' }
     );
@@ -95,7 +95,8 @@ exports.login = async (req, res) => {
       user: {
         id: user.id,
         name: user.name,
-        email: user.email
+        email: user.email,
+        role: user.role
       }
     });
   } catch (error) {
@@ -110,7 +111,7 @@ exports.verifyToken = async (req, res) => {
     const connection = await pool.getConnection();
 
     const [users] = await connection.execute(
-      'SELECT id, name, email, bio, avatar_url, skills FROM users WHERE id = ?',
+      'SELECT id, name, email, bio, avatar_url, skills, role FROM users WHERE id = ?',
       [req.user.id]
     );
 
@@ -129,7 +130,8 @@ exports.verifyToken = async (req, res) => {
         email: user.email,
         bio: user.bio,
         avatarUrl: user.avatar_url,
-        skills: user.skills ? JSON.parse(user.skills) : []
+        skills: user.skills ? JSON.parse(user.skills) : [],
+        role: user.role
       }
     });
   } catch (error) {

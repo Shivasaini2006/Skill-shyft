@@ -34,7 +34,9 @@ exports.createPost = async (req, res) => {
 exports.getPosts = async (req, res) => {
   try {
     const { page = 1, limit = 10, categoryId, search } = req.query;
-    const offset = (page - 1) * limit;
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 10;
+    const offsetNum = (pageNum - 1) * limitNum;
 
     const connection = await pool.getConnection();
 
@@ -63,7 +65,7 @@ exports.getPosts = async (req, res) => {
     }
 
     query += ' ORDER BY p.created_at DESC LIMIT ? OFFSET ?';
-    params.push(parseInt(limit), offset);
+    params.push(limitNum, offsetNum);
 
     const [posts] = await connection.execute(query, params);
 

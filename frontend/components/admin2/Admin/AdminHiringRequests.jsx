@@ -1,0 +1,317 @@
+import { useEffect, useState } from 'react';
+// Add xlsx for Excel export
+import * as XLSX from 'xlsx';
+import Modal from '../Common/Modal';
+import { useAuth } from '../../context/AuthContext';
+import api from '../../services/api';
+
+const AdminHiringRequests = () => {
+  const { user } = useAuth();
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [editingNotes, setEditingNotes] = useState({});
+  const [savingNotesId, setSavingNotesId] = useState(null);
+  const [updatingStatusId, setUpdatingStatusId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+  const [modalRequest, setModalRequest] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Fetch requests (refactored for refresh)
+  const fetchRequests = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await api.get('/hiring');
+      const data = response.data;
+      setRequests(data.requests || []);
+      // Set editingNotes to current notes for all requests
+      const notesMap = {};
+      (data.requests || []).forEach(r => { notesMap[r.id] = r.notes || ''; });
+      setEditingNotes(notesMap);
+    } catch (err) {
+      setError(err.response?.data?.error || err.message || 'Failed to fetch hiring requests');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { 
+    if (!user) {
+      setError('Please log in to access this page');
+      setLoading(false);
+      return;
+    }
+    fetchRequests(); 
+  }, [user]);
+
+  // Notes editing
+  const handleNotesInputChange = (id, value) => {
+    setEditingNotes(prev => ({ ...prev, [id]: value }));
+  };
+  const handleNotesSave = async (id) => {
+    setSavingNotesId(id);
+    try {
+      await api.patch(`/hiring/${id}/notes`, { notes: editingNotes[id] });
+      setRequests(reqs => reqs.map(r => r.id === id ? { ...r, notes: editingNotes[id] } : r));
+    } catch (error) {
+      alert(error.response?.data?.error || 'Failed to update notes.');
+    } finally {
+      setSavingNotesId(null);
+    }
+  };
+
+  // Status editing
+  const handleStatusChange = async (id, status) => {
+    setUpdatingStatusId(id);
+    try {
+      await api.patch(`/hiring/${id}/status`, { status });
+      setRequests(reqs => reqs.map(r => r.id === id ? { ...r, status } : r));
+    } catch (error) {
+      alert(error.response?.data?.error || 'Failed to update status.');
+    } finally {
+      setUpdatingStatusId(null);
+    }
+  };
+
+  // Delete
+  const handleDelete = async (id) => {
+    if (!window.confirm('Delete this hiring request?')) return;
+    setDeletingId(id);
+    try {
+      await api.delete(`/hiring/${id}`);
+      setRequests(reqs => reqs.filter(r => r.id !== id));
+    } catch (error) {
+      alert(error.response?.data?.error || 'Failed to delete request.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  // Modal for full details
+  const openModal = (req) => setModalRequest(req);
+  const closeModal = () => setModalRequest(null);
+
+  // Excel download handler
+  const handleDownloadExcel = () => {
+    // Prepare worksheet data
+    const wsData = [
+      [
+        'Name', 'Phone', 'Email', 'Course', 'Sem/Year', 'Position', 'About', 'CV', 'Submitted'
+      ],
+      ...requests.map(req => [
+        req.name,
+        req.phone,
+        req.email,
+        req.course,
+        req.sem_year || req.semYear,
+        req.position,
+        req.about,
+        req.cv_link || req.cv,
+        req.submitted_at ? new Date(req.submitted_at).toLocaleString() : ''
+      ])
+    ];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'HiringRequests');
+    XLSX.writeFile(wb, 'hiring_requests.xlsx');
+  };
+
+  // Filter requests based on search query
+  const filteredRequests = requests.filter(req => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      req.name?.toLowerCase().includes(query) ||
+      req.position?.toLowerCase().includes(query) ||
+      req.email?.toLowerCase().includes(query) ||
+      req.phone?.includes(query) ||
+      req.course?.toLowerCase().includes(query)
+    );
+  });
+
+  return (
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-2xl font-bold text-white">Hiring Requests</h2>
+        <div className="flex gap-2">
+          <button
+            onClick={fetchRequests}
+            className="bg-gray-700 hover:bg-gray-600 text-white font-semibold px-4 py-2 rounded shadow disabled:opacity-60"
+            disabled={loading}
+            title="Refresh requests"
+          >
+            {loading ? 'Refreshing...' : 'Refresh'}
+          </button>
+          <button
+            onClick={handleDownloadExcel}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded shadow"
+            disabled={requests.length === 0}
+          >
+            Download Excel
+          </button>
+        </div>
+      </div>
+
+      {/* Search Bar */}
+      <div className="mb-4">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search by name, position, email, phone, or course..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full px-4 py-3 pl-10 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          <svg 
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" 
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+              title="Clear search"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+        {searchQuery && (
+          <p className="mt-2 text-sm text-gray-400">
+            Found {filteredRequests.length} result{filteredRequests.length !== 1 ? 's' : ''} for "{searchQuery}"
+          </p>
+        )}
+      </div>
+
+      {loading && <div>Loading...</div>}
+      {error && <div className="text-red-500">{error}</div>}
+      {!loading && !error && (
+        <div className="overflow-x-auto max-h-[420px] min-h-[320px] border border-gray-700 rounded-lg">
+          <table className="min-w-full bg-gray-900 text-white rounded-lg shadow">
+            <thead>
+              <tr>
+                <th className="px-4 py-2">Name</th>
+                <th className="px-4 py-2">Position</th>
+                <th className="px-4 py-2">Status</th>
+                <th className="px-4 py-2">Submitted</th>
+                <th className="px-4 py-2">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredRequests.length === 0 ? (
+                <tr><td colSpan={5} className="text-center py-4">
+                  {searchQuery ? `No hiring requests found matching "${searchQuery}"` : 'No hiring requests found.'}
+                </td></tr>
+              ) : (
+                filteredRequests.map((req) => (
+                  <tr key={req.id} className="border-b border-gray-700">
+                    <td className="px-4 py-2">{req.name}</td>
+                    <td className="px-4 py-2">{req.position}</td>
+                    <td className="px-4 py-2">
+                      <select
+                        value={req.status || 'pending'}
+                        onChange={e => handleStatusChange(req.id, e.target.value)}
+                        disabled={updatingStatusId === req.id}
+                        className="rounded bg-gray-800 border border-gray-700 text-primary-200 px-2 py-1 focus:ring-primary-500"
+                      >
+                        {['pending', 'reviewed', 'rejected', 'accepted'].map(opt => (
+                          <option key={opt} value={opt}>{opt.charAt(0).toUpperCase() + opt.slice(1)}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-4 py-2">{req.submitted_at ? new Date(req.submitted_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : ''}</td>
+                    <td className="px-4 py-2 flex gap-2">
+                      <button
+                        className="inline-flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1 rounded-full shadow transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                        onClick={() => openModal(req)}
+                        title="View Details"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        View
+                      </button>
+                      <button
+                        onClick={() => handleDelete(req.id)}
+                        disabled={deletingId === req.id}
+                        className="bg-red-700 hover:bg-red-800 text-white px-3 py-1 rounded shadow text-xs font-semibold disabled:opacity-60"
+                      >
+                        {deletingId === req.id ? 'Deleting...' : 'Delete'}
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {/* Modal for full details */}
+      {modalRequest && (
+        <Modal onClose={closeModal}>
+          <div className="p-4 max-w-lg w-full bg-gray-900 text-white rounded-2xl shadow-xl border border-gray-700 mx-auto" style={{ background: '#18181b' }}>
+            <h3 className="text-2xl font-bold mb-3 text-blue-300">{modalRequest.name} - {modalRequest.position}</h3>
+            <div className="mb-1"><b className="text-blue-200">Email:</b> {modalRequest.email}</div>
+            <div className="mb-1"><b className="text-blue-200">Phone:</b> {modalRequest.phone}</div>
+            <div className="mb-1"><b className="text-blue-200">Course:</b> {modalRequest.course}</div>
+            <div className="mb-1"><b className="text-blue-200">Sem/Year:</b> {modalRequest.sem_year || modalRequest.semYear}</div>
+            <div className="mb-1"><b className="text-blue-200">About:</b> <pre className="whitespace-pre-wrap bg-gray-800 p-2 rounded mt-1 text-white">{modalRequest.about}</pre></div>
+            <div className="mb-1"><b className="text-blue-200">CV:</b> {modalRequest.cv_link || modalRequest.cv ? (
+              <a
+                href={modalRequest.cv_link || modalRequest.cv}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-400 underline break-all"
+                onClick={e => {
+                  // If the link is missing protocol, add https://
+                  let url = modalRequest.cv_link || modalRequest.cv;
+                  if (url && !/^https?:\/\//i.test(url)) {
+                    url = 'https://' + url;
+                    window.open(url, '_blank', 'noopener,noreferrer');
+                    e.preventDefault();
+                  }
+                }}
+              >
+                View CV
+              </a>
+            ) : (
+              <span className="text-gray-400">No CV provided</span>
+            )}
+            </div>
+            <div className="mb-1"><b className="text-blue-200">Status:</b> {modalRequest.status || 'pending'}</div>
+            <div className="mb-1">
+              <b className="text-blue-200">Notes:</b>
+              <div className="flex gap-2 items-start mt-1">
+                <textarea
+                  value={editingNotes[modalRequest.id] !== undefined ? editingNotes[modalRequest.id] : (modalRequest.notes || '')}
+                  onChange={e => handleNotesInputChange(modalRequest.id, e.target.value)}
+                  disabled={savingNotesId === modalRequest.id}
+                  placeholder={modalRequest.notes || 'Add notes...'}
+                  className="rounded bg-gray-800 border border-gray-700 text-white px-2 py-1 w-full min-h-[60px] resize-y focus:ring-blue-500"
+                  style={{ fontFamily: 'inherit', fontSize: '1rem' }}
+                  rows={Math.max(3, (editingNotes[modalRequest.id] || modalRequest.notes || '').split('\n').length)}
+                />
+                <button
+                  onClick={() => handleNotesSave(modalRequest.id)}
+                  disabled={savingNotesId === modalRequest.id || (editingNotes[modalRequest.id] === modalRequest.notes)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-semibold disabled:opacity-60 mt-1"
+                >
+                  {savingNotesId === modalRequest.id ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </div>
+            <div className="mb-1"><b className="text-blue-200">Submitted:</b> {modalRequest.submitted_at ? new Date(modalRequest.submitted_at).toLocaleString() : ''}</div>
+            <button onClick={closeModal} className="mt-3 bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded shadow">Close</button>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+};
+
+export default AdminHiringRequests;

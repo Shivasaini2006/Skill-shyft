@@ -20,7 +20,12 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    // Only redirect to login if the error is 401 and the request was NOT to the login endpoint
+    if (
+      error.response?.status === 401 && 
+      !error.config.url.includes('/auth/login') &&
+      !error.config.url.includes('/auth/register')
+    ) {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('token');
         localStorage.removeItem('user');

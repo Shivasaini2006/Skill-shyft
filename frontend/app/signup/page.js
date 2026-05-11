@@ -42,7 +42,7 @@ export default function SignupPage() {
       });
 
       login(loginResponse.data.user, loginResponse.data.token);
-      router.push('/forum');
+      router.push('/profile');
     } catch (err) {
       setError(err.response?.data?.error || 'Registration failed. Please try again.');
     } finally {

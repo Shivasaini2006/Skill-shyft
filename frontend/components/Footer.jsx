@@ -3,12 +3,12 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowUpRight, GitPullRequest, Globe, Mail, MessageSquare } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 const footerLinks = [
   {
     title: 'Community',
     links: [
-      { label: 'Forum', href: '/forum' },
       { label: 'Resources', href: '/resources' },
       { label: 'Events', href: '/events' },
     ],
@@ -24,6 +24,12 @@ const footerLinks = [
 ];
 
 export default function Footer() {
+  const pathname = usePathname();
+
+  if (pathname?.startsWith('/admin')) {
+    return null;
+  }
+
   return (
     <footer className='border-t border-white/10 bg-black'>
       <div className='mx-auto max-w-7xl px-6 py-16'>

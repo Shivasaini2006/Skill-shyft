@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { ArrowUpRight, Layers3, Sparkles } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { ArrowUpRight, Layers3, Sparkles, GitBranch, ExternalLink } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { createStackedCards } from '../../animations/gsapAnimations';
 import HorizontalScroll from '../../components/HorizontalScroll';
 import { useScrollAnimation } from '../../hooks/useScrollAnimation';
+import apiClient from '../../lib/apiClient';
 
-const projects = [
+const showcaseProjects = [
   {
     title: 'Skill Shift Platform',
     tag: 'Community',
@@ -86,6 +87,20 @@ export default function ProjectsPage() {
   const reveal = useScrollAnimation('slideLeft');
   const fade = useScrollAnimation('fadeUp');
 
+  const [dbProjects, setDbProjects] = useState([]);
+  
+  useEffect(() => {
+    const fetchDbProjects = async () => {
+      try {
+        const response = await apiClient.get('/projects');
+        setDbProjects(response.data);
+      } catch (err) {
+        console.error('Failed to fetch projects', err);
+      }
+    };
+    fetchDbProjects();
+  }, []);
+
   useEffect(() => {
     return createStackedCards({
       container: pipelineRef.current,
@@ -142,7 +157,82 @@ export default function ProjectsPage() {
         </div>
       </section>
 
-      <HorizontalScroll items={projects} />
+      {/* Database Projects Section */}
+      <section className="bg-black py-20 border-b border-white/5">
+        <div className="mx-auto max-w-7xl px-6">
+          <motion.div
+            variants={reveal.container}
+            initial="hidden"
+            whileInView="show"
+            viewport={reveal.viewport}
+            className="mb-12"
+          >
+            <motion.h2 variants={reveal.item} className="text-3xl font-bold text-white mb-4">
+              Community Initiatives
+            </motion.h2>
+            <motion.p variants={reveal.item} className="text-gray-400 max-w-2xl">
+              Projects directly managed and tracked by our core team.
+            </motion.p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {dbProjects.map((project) => (
+              <div key={project.id} className="group flex flex-col justify-between overflow-hidden rounded-3xl border border-white/10 bg-white/5 transition-all hover:bg-white/10 hover:border-purple-500/50">
+                {project.image_url && (
+                  <div className="w-full h-48 overflow-hidden border-b border-white/10 bg-black/50">
+                    <img 
+                      src={project.image_url} 
+                      alt={project.name} 
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                    />
+                  </div>
+                )}
+                
+                <div className="p-8 flex-1 flex flex-col">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-bold text-white group-hover:text-purple-400 transition-colors">{project.name}</h3>
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider border ${
+                      project.status === 'completed' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
+                      project.status === 'ongoing' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                      'bg-orange-500/10 text-orange-400 border-orange-500/20'
+                    }`}>
+                      {project.status}
+                    </span>
+                  </div>
+                  
+                  <p className="text-gray-400 leading-relaxed text-sm flex-1">{project.description}</p>
+                  
+                  <div className="mt-6 pt-6 border-t border-white/10 flex justify-between items-center text-sm">
+                    <div className="flex items-center gap-4">
+                      {project.github_url && (
+                        <a href={project.github_url} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-white transition-colors" title="View Source">
+                          <GitBranch size={18} />
+                        </a>
+                      )}
+                      {project.live_url && (
+                        <a href={project.live_url} target="_blank" rel="noreferrer" className="text-gray-400 hover:text-purple-400 transition-colors" title="Live Preview">
+                          <ExternalLink size={18} />
+                        </a>
+                      )}
+                    </div>
+                    <span className="text-xs text-gray-500">
+                      {new Date(project.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {dbProjects.length === 0 && (
+              <div className="col-span-full py-10 text-center text-gray-500 border border-white/5 rounded-3xl bg-white/5">
+                No active projects listed yet.
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <HorizontalScroll items={showcaseProjects} />
 
       <section className='bg-black py-28'>
         <div className='mx-auto max-w-7xl px-6'>

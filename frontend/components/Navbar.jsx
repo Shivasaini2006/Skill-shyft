@@ -3,14 +3,16 @@
 import Link from 'next/link';
 import { motion, useMotionTemplate, useScroll, useTransform } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
+import useAuthStore from '../lib/authStore';
 
 const navLinks = [
   { label: 'Home', href: '/' },
   { label: 'Team', href: '/team' },
   { label: 'About', href: '/about' },
   { label: 'Projects', href: '/projects' },
-  { label: 'Updates', href: '/updates' },
+  { label: 'Blogs', href: '/blogs' },
   { label: 'Contact', href: '/contact' },
   { label: 'Hiring', href: '/hiring' },
 ];
@@ -18,6 +20,13 @@ const navLinks = [
 export default function Navbar() {
   const { scrollY } = useScroll();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const pathname = usePathname();
+  const { isAuthenticated, user, logout } = useAuthStore();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const height = useTransform(scrollY, [0, 120], [88, 72]);
   const bgAlpha = useTransform(scrollY, [0, 120], [0, 0.62]);
@@ -33,6 +42,10 @@ export default function Navbar() {
     }),
     [],
   );
+
+  if (pathname?.startsWith('/admin')) {
+    return null;
+  }
 
   return (
     <motion.nav
@@ -58,20 +71,41 @@ export default function Navbar() {
 
         <div className='hidden items-center gap-4 md:flex'>
           <div className='flex items-center gap-3'>
-            <Link
-              href='/login'
-              className='rounded-full border border-white/15 bg-transparent px-5 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/90 transition-colors hover:bg-white/5'
-            >
-              Login
-            </Link>
-            <motion.div whileHover={{ y: -1, scale: 1.02 }} whileTap={{ scale: 0.99 }} transition={{ type: 'spring', stiffness: 420, damping: 28 }}>
-              <Link
-                href='/signup'
-                className='rounded-full bg-white px-5 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-black'
-              >
-                Join
-              </Link>
-            </motion.div>
+            {mounted && isAuthenticated ? (
+              <>
+                <Link href='/profile' className='text-sm font-semibold text-gray-300 hover:text-white mr-2'>
+                  {user?.name || 'Profile'}
+                </Link>
+                {(user?.role === 'admin' || user?.role === 'super_admin') && (
+                  <Link href='/admin' className='text-sm font-semibold text-purple-400 hover:text-purple-300 mr-2'>
+                    Admin Panel
+                  </Link>
+                )}
+                <button
+                  onClick={logout}
+                  className='rounded-full border border-white/15 bg-transparent px-5 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/90 transition-colors hover:bg-white/5 hover:text-red-400'
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href='/login'
+                  className='rounded-full border border-white/15 bg-transparent px-5 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/90 transition-colors hover:bg-white/5'
+                >
+                  Login
+                </Link>
+                <motion.div whileHover={{ y: -1, scale: 1.02 }} whileTap={{ scale: 0.99 }} transition={{ type: 'spring', stiffness: 420, damping: 28 }}>
+                  <Link
+                    href='/signup'
+                    className='rounded-full bg-white px-5 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-black'
+                  >
+                    Join
+                  </Link>
+                </motion.div>
+              </>
+            )}
           </div>
         </div>
 
@@ -106,20 +140,43 @@ export default function Navbar() {
             ))}
 
             <div className='mt-2 grid grid-cols-2 gap-3'>
-              <Link
-                href='/login'
-                className='rounded-2xl border border-white/10 bg-transparent px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.22em] text-white/90'
-                onClick={() => setIsMobileOpen(false)}
-              >
-                Login
-              </Link>
-              <Link
-                href='/signup'
-                className='rounded-2xl bg-white px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.22em] text-black'
-                onClick={() => setIsMobileOpen(false)}
-              >
-                Join
-              </Link>
+              {mounted && isAuthenticated ? (
+                <>
+                  <button
+                    onClick={() => {
+                      logout();
+                      setIsMobileOpen(false);
+                    }}
+                    className='rounded-2xl border border-white/10 bg-transparent px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.22em] text-red-400 hover:bg-white/5'
+                  >
+                    Logout
+                  </button>
+                  <Link
+                    href='/profile'
+                    className='rounded-2xl bg-white px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.22em] text-black'
+                    onClick={() => setIsMobileOpen(false)}
+                  >
+                    Profile
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href='/login'
+                    className='rounded-2xl border border-white/10 bg-transparent px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.22em] text-white/90'
+                    onClick={() => setIsMobileOpen(false)}
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    href='/signup'
+                    className='rounded-2xl bg-white px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.22em] text-black'
+                    onClick={() => setIsMobileOpen(false)}
+                  >
+                    Join
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>

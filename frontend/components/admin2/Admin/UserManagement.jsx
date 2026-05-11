@@ -1,0 +1,505 @@
+import { useState, useEffect } from 'react'
+import { Trash2, Search, Filter, User, Mail, Calendar, Shield, RefreshCw, CheckCircle, AlertCircle, Plus, KeyRound } from 'lucide-react'
+import api, { updateUserRole, expireUserPassword, createUser, updateUser, getRoles } from '../../services/api'
+import { useAuth } from '../../context/AuthContext'
+import AdminAccessWrapper from './AdminAccessWrapper'
+import { hasPermission } from '../../utils/adminAccess'
+import * as XLSX from 'xlsx'
+
+const UserManagement = ({ onUserCountUpdate, initialFilter = 'all' }) => {
+    const [users, setUsers] = useState([])
+    const [loading, setLoading] = useState(true)
+    const [searchTerm, setSearchTerm] = useState('')
+    const [filterRole, setFilterRole] = useState(initialFilter)
+    const [deleteConfirm, setDeleteConfirm] = useState(null)
+    const [message, setMessage] = useState(null)
+    const [showForm, setShowForm] = useState(false)
+    const [editUser, setEditUser] = useState(null)
+    const { user: currentUser, refreshUser } = useAuth()
+    const [editingNotes, setEditingNotes] = useState({});
+    const [savingNotesId, setSavingNotesId] = useState(null);
+    const [rolesList, setRolesList] = useState([]);
+
+    // Update filter when initialFilter prop changes
+    useEffect(() => {
+        setFilterRole(initialFilter);
+    }, [initialFilter]);
+
+    useEffect(() => {
+        // Only fetch if user has permission or is admin
+        if (!currentUser || (!hasPermission(currentUser.permissions || [], 'user_management') && currentUser.role !== 'admin' && currentUser.role !== 'super_admin')) {
+            setLoading(false);
+            return;
+        }
+
+        // Fetch users and roles from backend
+        const fetchUsers = async () => {
+            try {
+                setLoading(true)
+                const response = await api.get('/users')
+                // Map backend fields to frontend fields if needed
+                const usersData = response.data.map(u => ({
+                    id: u.id,
+                    fullName: u.full_name || u.username,
+                    email: u.email,
+                    role: u.role || 'User',
+                    registrationDate: u.created_at,
+                    status: 'active',
+                }))
+                setUsers(usersData)
+                // Temporarily skip notes fetching due to database schema issues
+                const notesMap = {};
+                usersData.forEach(u => {
+                    notesMap[u.id] = '';
+                });
+                setEditingNotes(notesMap);
+            } catch (error) {
+                // If unauthorized, force logout and redirect
+                if (error.response?.status === 401) {
+                    localStorage.removeItem('token');
+                    window.location.href = '/login';
+                    return;
+                }
+                setMessage({ type: 'error', text: 'Failed to load users' })
+            } finally {
+                setLoading(false)
+            }
+        }
+        const fetchRoles = async () => {
+            try {
+                const response = await getRoles();
+                // Accept array, { roles: [...] }, or { data: [...] }
+                let rolesArr = [];
+                if (Array.isArray(response)) {
+                    rolesArr = response;
+                } else if (response && Array.isArray(response.roles)) {
+                    rolesArr = response.roles;
+                } else if (response && Array.isArray(response.data)) {
+                    rolesArr = response.data;
+                }
+                setRolesList(rolesArr);
+            } catch {
+                setRolesList([]);
+            }
+        }
+        fetchUsers();
+        fetchRoles();
+    }, [])
+
+    // Update parent component with user count
+    useEffect(() => {
+        if (onUserCountUpdate) {
+            onUserCountUpdate(users.length)
+        }
+    }, [users.length, onUserCountUpdate])
+
+    // Clear message after 3 seconds
+    useEffect(() => {
+        if (message) {
+            const timer = setTimeout(() => {
+                setMessage(null)
+            }, 3000)
+            return () => clearTimeout(timer)
+        }
+    }, [message])
+
+    const fetchUsers = async () => {
+        try {
+            setLoading(true)
+            const response = await api.get('/users')
+            const usersData = response.data.map(u => ({
+                id: u.id,
+                fullName: u.full_name || u.username,
+                email: u.email,
+                role: u.role || 'User',
+                registrationDate: u.created_at,
+                status: 'active',
+            }))
+            setUsers(usersData)
+            setMessage({ type: 'success', text: 'Users loaded successfully' })
+        } catch (error) {
+            setMessage({ type: 'error', text: 'Failed to load users' })
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const deleteUser = async (userId) => {
+        try {
+            await api.delete(`/users/${userId}`)
+            setUsers(users.filter(user => user.id !== userId))
+            setDeleteConfirm(null)
+            setMessage({ type: 'success', text: 'User deleted successfully' })
+        } catch (error) {
+            const errorMessage = error.response?.data?.error || 'Failed to delete user'
+            setMessage({ type: 'error', text: errorMessage })
+        }
+    }
+
+    // Add handler for role change
+    const handleRoleChange = async (userId, newRole) => {
+        try {
+             await updateUserRole(userId, newRole)
+            setUsers(users => users.map(u => u.id === userId ? { ...u, role: newRole } : u))
+            // If the current user updated their own role, refresh the auth context
+            if (userId === currentUser?.id) {
+                await refreshUser()
+            }
+
+            setMessage({ type: 'success', text: 'Role updated successfully' })
+        } catch (error) {
+            setMessage({ type: 'error', text: 'Failed to update role' })
+        }
+    }
+
+    // Add handler for expiring password
+    const handleExpirePassword = async (userId) => {
+        try {
+            await expireUserPassword(userId)
+            setMessage({ type: 'success', text: 'Password expiration triggered' })
+        } catch (error) {
+            setMessage({ type: 'error', text: 'Failed to expire password' })
+        }
+    }
+
+    const handleAdd = () => {
+        setEditUser(null)
+        setShowForm(true)
+    }
+    const handleEdit = (user) => {
+        setEditUser(user)
+        setShowForm(true)
+    }
+    const handleFormSubmit = async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const userData = {
+            full_name: form.fullName.value,
+            email: form.email.value,
+            password: form.password ? form.password.value : undefined, // Only for new users
+            role: form.role.value,
+        };
+        try {
+            if (editUser) {
+                // Update user (password not updated here)
+                await updateUser(editUser.id, userData);
+                setMessage({ type: 'success', text: 'User updated successfully' });
+            } else {
+                if (!form.password.value) {
+                    setMessage({ type: 'error', text: 'Password is required for new users' });
+                    return;
+                }
+                await createUser(userData);
+                setMessage({ type: 'success', text: 'User added successfully' });
+            }
+            fetchUsers();
+            setShowForm(false);
+            setEditUser(null);
+        } catch (error) {
+            setMessage({ type: 'error', text: 'Failed to save user' });
+        }
+    }
+
+    const filteredUsers = users.filter(user => {
+        const matchesSearch = user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            user.email.toLowerCase().includes(searchTerm.toLowerCase())
+        
+        // Handle 'core' filter to show only core team members
+        let matchesRole;
+        if (filterRole === 'core') {
+            const coreRoles = ['admin', 'super_admin', 'team_lead', 'team_member', 'community_member', 'HR Lead', 'Technical Lead', 'Project Manager', 'Developer', 'Designer', 'staff', 'Blogger'];
+            matchesRole = coreRoles.includes(user.role);
+        } else {
+            matchesRole = filterRole === 'all' || user.role === filterRole;
+        }
+        
+        return matchesSearch && matchesRole
+    })
+
+    const roles = ['all', ...rolesList.map(r => r.name)];
+
+    // Excel download handler
+    const handleDownloadExcel = () => {
+        const wsData = [
+            ['Full Name', 'Email', 'Role', 'Registration Date', 'Status'],
+            ...filteredUsers.map(user => [
+                user.fullName,
+                user.email,
+                user.role,
+                user.registrationDate ? new Date(user.registrationDate).toLocaleDateString() : '',
+                user.status
+            ])
+        ];
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Users');
+        XLSX.writeFile(wb, 'users.xlsx');
+    };
+
+    const handleNotesInputChange = (id, value) => {
+        setEditingNotes(prev => ({ ...prev, [id]: value }));
+    };
+    const handleNotesSave = async (id) => {
+        setSavingNotesId(id);
+        try {
+            // Temporarily disabled due to database schema issues
+            setMessage({ type: 'info', text: 'Notes saving temporarily disabled' });
+        } catch {
+            setMessage({ type: 'error', text: 'Failed to update notes' });
+        } finally {
+            setSavingNotesId(null);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+            </div>
+        )
+    }
+
+    return (
+        <AdminAccessWrapper permission="user_management">
+            <div>
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold text-white">Manage Users</h2>
+                    <div className="flex items-center gap-4">
+                        <div className="text-gray-400">
+                            Total Users: {users.length}
+                        </div>
+                        <button
+                            onClick={fetchUsers}
+                            disabled={loading}
+                            className="text-gray-400 hover:text-white transition-colors disabled:opacity-50 p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-primary-500"
+                            title="Refresh users"
+                        >
+                            <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
+                        </button>
+                        <button
+                            className="btn-primary flex items-center gap-2 px-3 py-2 rounded-lg"
+                            onClick={handleAdd}
+                            title="Add User"
+                        >
+                            <Plus size={18} />
+                            <span className="hidden sm:inline">Add User</span>
+                        </button>
+                        <button
+                            onClick={handleDownloadExcel}
+                            className="bg-blue-600 hover:bg-blue-800 text-white font-semibold px-4 py-2 rounded shadow"
+                            disabled={filteredUsers.length === 0}
+                        >
+                            Download Excel
+                        </button>
+                    </div>
+                </div>
+
+                {/* Message Display */}
+                {message && (
+                    <div className={`mb-4 p-3 rounded-lg flex items-center gap-2 ${message.type === 'success'
+                        ? 'bg-green-900/50 border border-green-700 text-green-300'
+                        : 'bg-red-900/50 border border-red-700 text-red-300'
+                        }`}>
+                    {message.type === 'success' ? (
+                        <CheckCircle size={16} />
+                    ) : (
+                        <AlertCircle size={16} />
+                    )}
+                    {message.text}
+                </div>
+                )}
+
+                {/* Search and Filter */}
+                <div className="flex flex-col md:flex-row gap-4 mb-6">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                        <input
+                            type="text"
+                            placeholder="Search users by name or email..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-primary-500"
+                        />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Filter className="text-gray-400" size={20} />
+                        <select
+                            value={filterRole}
+                            onChange={(e) => setFilterRole(e.target.value)}
+                            className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-primary-500"
+                        >
+                            {roles.map(role => (
+                                <option key={role} value={role}>
+                                    {role === 'all' ? 'All Roles' : role}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
+                {/* Users Table */}
+                <div className="overflow-y-auto">
+                    <table className="w-full bg-gray-900 rounded-lg table-fixed">
+                        <thead className="sticky top-0 z-10 bg-gray-900">
+                            <tr className="border-b border-gray-700">
+                                <th className="text-left py-3 px-2 text-primary-400 font-semibold bg-gray-900 w-[20%]">Name</th>
+                                <th className="text-left py-3 px-2 text-primary-400 font-semibold bg-gray-900 w-[25%]">Email</th>
+                                <th className="text-center py-3 px-2 text-primary-400 font-semibold bg-gray-900 w-[12%]">Role</th>
+                                <th className="text-center py-3 px-2 text-primary-400 font-semibold bg-gray-900 w-[16%]">Reg. Date</th>
+                                <th className="text-center py-3 px-2 text-primary-400 font-semibold bg-gray-900 w-[25%]">Remarks</th>
+                                <th className="text-center py-3 px-2 text-primary-400 font-semibold bg-gray-900 w-[10%]">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredUsers.map((user) => (
+                                <tr key={user.id} className="border-b border-gray-800 hover:bg-gray-800/70">
+                                    <td className="py-3 px-2">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center flex-shrink-0">
+                                                <User className="text-white" size={14} />
+                                            </div>
+                                            <span className="text-gray-100 font-medium text-sm truncate">{user.fullName}</span>
+                                        </div>
+                                    </td>
+                                    <td className="py-3 px-2">
+                                        <div className="flex items-center gap-1 text-primary-200 text-sm">
+                                            <Mail size={14} className="flex-shrink-0" />
+                                            <span className="truncate">{user.email}</span>
+                                        </div>
+                                    </td>
+                                    <td className="py-3 px-2">
+                                        <select
+                                            value={user.role}
+                                            onChange={e => handleRoleChange(user.id, e.target.value)}
+                                            className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-primary-200 text-xs w-full"
+                                        >
+                                            {rolesList.map(role => (
+                                                <option key={role.id} value={role.name}>{role.name}</option>
+                                            ))}
+                                        </select>
+                                    </td>
+                                    <td className="py-3 px-2 text-center">
+                                        <div className="flex flex-col items-center text-primary-200 text-xs">
+                                            <Calendar size={14} />
+                                            <span className="mt-1">{new Date(user.registrationDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}</span>
+                                        </div>
+                                    </td>
+                                    <td className="py-3 px-2">
+                                        <div className="flex flex-col gap-1">
+                                            <textarea
+                                                value={editingNotes[user.id] !== undefined ? editingNotes[user.id] : ''}
+                                                onChange={e => handleNotesInputChange(user.id, e.target.value)}
+                                                disabled={savingNotesId === user.id}
+                                                placeholder={'Add notes...'}
+                                                className="rounded bg-gray-800 border border-gray-700 text-white px-2 py-1 w-full resize-y focus:ring-blue-500 text-xs"
+                                                rows={2}
+                                            />
+                                            <button
+                                                onClick={() => handleNotesSave(user.id)}
+                                                disabled={savingNotesId === user.id}
+                                                className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold disabled:opacity-60"
+                                            >
+                                                {savingNotesId === user.id ? 'Saving...' : 'Save'}
+                                            </button>
+                                        </div>
+                                    </td>
+                                    <td className="py-3 px-2">
+                                        <div className="flex items-center justify-center gap-1">
+                                            <button
+                                                onClick={() => setDeleteConfirm(user.id)}
+                                                className="text-red-400 hover:text-red-300 transition-colors p-1.5 rounded-full focus:outline-none focus:ring-2 focus:ring-red-500"
+                                                title="Delete Account"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleExpirePassword(user.id)}
+                                                className="text-yellow-400 hover:text-yellow-300 transition-colors p-1.5 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                                                title="Expire Password"
+                                            >
+                                                <KeyRound size={16} />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+
+                    {filteredUsers.length === 0 && (
+                        <div className="text-center py-8 text-gray-400">
+                            No users found matching your criteria.
+                        </div>
+                    )}
+                </div>
+
+                {/* Delete Confirmation Modal */}
+                {deleteConfirm && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                        <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+                            <h3 className="text-xl font-bold text-white mb-4">Confirm Deletion</h3>
+                            <p className="text-gray-300 mb-6">
+                                Are you sure you want to delete this user account? This action cannot be undone.
+                            </p>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => deleteUser(deleteConfirm)}
+                                    className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg transition-colors"
+                                >
+                                    Delete
+                                </button>
+                                <button
+                                    onClick={() => setDeleteConfirm(null)}
+                                    className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Add/Edit User Modal */}
+                {showForm && (
+                    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+                        <form className="bg-gray-800 p-6 rounded-lg w-full max-w-md" onSubmit={handleFormSubmit}>
+                            <h3 className="text-xl font-bold mb-4">{editUser ? 'Edit User' : 'Add User'}</h3>
+                            <div className="mb-3">
+                                <label className="block mb-1">Full Name</label>
+                                <input name="fullName" defaultValue={editUser?.fullName || ''} className="w-full p-2 rounded bg-gray-900 text-white" required />
+                            </div>
+                            <div className="mb-3">
+                                <label className="block mb-1">Email</label>
+                                <input name="email" type="email" defaultValue={editUser?.email || ''} className="w-full p-2 rounded bg-gray-900 text-white" required />
+                            </div>
+                            <div className="mb-3">
+                                <label className="block mb-1">Role</label>
+                                <select name="role" defaultValue={editUser?.role || 'user'} className="w-full p-2 rounded bg-gray-900 text-white">
+                                    {rolesList.map(role => (
+                                        <option key={role.id} value={role.name}>{role.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="mb-3">
+                                <label className="block mb-1">Notes</label>
+                                <textarea name="notes" defaultValue={editUser?.notes || ''} className="w-full p-2 rounded bg-gray-900 text-white" rows={3} />
+                            </div>
+                            {!editUser && (
+                                <div className="mb-3">
+                                    <label className="block mb-1">Password</label>
+                                    <input name="password" type="password" className="w-full p-2 rounded bg-gray-900 text-white" required />
+                                </div>
+                            )}
+                            <div className="flex gap-2 justify-end">
+                                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>Cancel</button>
+                                <button type="submit" className="btn-primary">Save</button>
+                            </div>
+                        </form>
+                    </div>
+                )}
+            </div>
+        </AdminAccessWrapper>
+    )
+}
+
+export default UserManagement

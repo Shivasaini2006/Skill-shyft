@@ -142,7 +142,7 @@ export default function Hero() {
           transition={{ duration: 1.0, ease: [0.16, 1, 0.3, 1] }}
           className='text-balance text-6xl font-black tracking-[-0.07em] text-white sm:text-7xl md:text-8xl lg:text-9xl'
         >
-          SKILL <span className='text-gradient'>SHIFT</span>
+          SKILL <span className='text-gradient'>SHYFT</span>
         </motion.h1>
 
         <motion.p
@@ -266,7 +266,7 @@ export default function Hero() {
                               <p className='mt-3 text-2xl font-bold tracking-tight text-white'>{card.value}</p>
                               <div className='mt-5 h-px w-full bg-white/10' />
                               <p className='mt-4 text-xs font-semibold uppercase tracking-[0.22em] text-gray-500'>
-                                Skill Shift System
+                                Skill Shyft System
                               </p>
                             </>
                           ) : (

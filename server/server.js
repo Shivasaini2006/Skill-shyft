@@ -27,7 +27,9 @@ app.use('/api/comments', require('./routes/comments.routes'));
 app.use('/api/categories', require('./routes/categories.routes'));
 app.use('/api/resources', require('./routes/resources.routes'));
 app.use('/api/events', require('./routes/events.routes'));
-
+app.use('/api/admin', require('./routes/admin.routes'));
+app.use('/api/blogs', require('./routes/blogs.routes'));
+app.use('/api/projects', require('./routes/projects.routes'));
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
