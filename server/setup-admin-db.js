@@ -9,13 +9,13 @@ async function setupAdminDB() {
     connection = await mysql.createConnection({
       host: process.env.DB_HOST || 'localhost',
       user: process.env.DB_USER || 'root',
-      password: process.env.DB_PASSWORD || 'root',
+      password: process.env.DB_PASSWORD || 'skill_shyft@2026',
       database: process.env.DB_NAME || 'skill_shift',
       multipleStatements: true
     });
-    
+
     console.log('Connected to MySQL. Adding admin schema...');
-    
+
     // Add role to users if it doesn't exist
     try {
       await connection.query("ALTER TABLE users ADD COLUMN role ENUM('user', 'moderator', 'admin', 'super_admin') DEFAULT 'user'");
@@ -27,10 +27,10 @@ async function setupAdminDB() {
         throw err;
       }
     }
-    
+
     const schemaPath = path.join(__dirname, 'database', 'admin_schema.sql');
     const schemaSql = fs.readFileSync(schemaPath, 'utf8');
-    
+
     await connection.query(schemaSql);
     console.log('Admin schema imported successfully!');
     process.exit(0);
